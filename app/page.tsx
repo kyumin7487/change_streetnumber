@@ -1,21 +1,25 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import * as XLSX from 'xlsx';
 import { Upload, Download, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const AddressConverter = () => {
-    const [file, setFile] = useState(null);
-    const [data, setData] = useState([]);
+    // 타입 오류 방지를 위해 제네릭(<any>)이나 초기값 설정
+    const [file, setFile] = useState<File | null>(null);
+    const [data, setData] = useState<any[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [processedData, setProcessedData] = useState([]);
+    const [processedData, setProcessedData] = useState<any[]>([]);
     const [selectedColumn, setSelectedColumn] = useState('');
-    const [columns, setColumns] = useState([]);
+    const [columns, setColumns] = useState<any[]>([]);
     const [apiKey, setApiKey] = useState('');
-    const [useProxy, setUseProxy] = useState(true);
-    const [progress, setProgress] = useState(0); // 진행률 상태 추가
 
-    const convertAddress = async (address) => {
+    // GitHub Pages는 정적 사이트라 API Route가 없으므로 기본값을 false로 변경 권장
+    const [useProxy, setUseProxy] = useState(false);
+    const [progress, setProgress] = useState(0);
+
+    // [수정 1] address에 ': string' 타입 명시
+    const convertAddress = async (address: string) => {
         try {
             if (!apiKey) {
                 throw new Error('카카오 API 키가 설정되지 않았습니다');
@@ -72,7 +76,7 @@ const AddressConverter = () => {
                     };
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('주소 변환 오류:', error.message);
             if (useProxy && error.message.includes('API Route')) {
                 setUseProxy(false);
@@ -83,14 +87,15 @@ const AddressConverter = () => {
         }
     };
 
-    const handleFileUpload = (event) => {
+    // [수정 2] event에 ': any' 타입 명시 (간편한 해결을 위해 any 사용)
+    const handleFileUpload = (event: any) => {
         const uploadedFile = event.target.files[0];
         if (!uploadedFile) return;
 
         setFile(uploadedFile);
         const reader = new FileReader();
 
-        reader.onload = (e) => {
+        reader.onload = (e: any) => {
             try {
                 const workbook = XLSX.read(e.target.result, { type: 'binary' });
                 const sheetName = workbook.SheetNames[0];
@@ -98,7 +103,7 @@ const AddressConverter = () => {
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
                 if (jsonData.length > 0) {
-                    const headerRow = jsonData[0];
+                    const headerRow = jsonData[0] as any[];
                     setColumns(headerRow);
                     setData(jsonData);
                 }
@@ -125,11 +130,13 @@ const AddressConverter = () => {
         const columnIndex = columns.indexOf(selectedColumn);
         const newData = [];
 
-        const headerRow = [...data[0], '도로명주소', '지번주소'];
+        // 타입 오류 방지
+        const firstRow = data[0] as any[];
+        const headerRow = [...firstRow, '도로명주소', '지번주소'];
         newData.push(headerRow);
 
         for (let i = 1; i < data.length; i++) {
-            const row = data[i];
+            const row = data[i] as any[];
             const address = row[columnIndex];
 
             if (address && typeof address === 'string') {
@@ -150,7 +157,7 @@ const AddressConverter = () => {
     };
 
     const downloadExcel = () => {
-        if (!processedData.length) return;
+        if (!processedData.length || !file) return;
 
         const worksheet = XLSX.utils.aoa_to_sheet(processedData);
         const workbook = XLSX.utils.book_new();
@@ -191,7 +198,9 @@ const AddressConverter = () => {
                         />
                         <span className="text-sm text-gray-700">API Route 사용 (권장)</span>
                     </label>
-                    <p className="text-xs text-gray-500 mt-1">체크 해제시 직접 호출 (CORS 에러 가능)</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                        * GitHub Pages 배포 시 체크를 해제하세요 (직접 호출 모드 사용)
+                    </p>
                 </div>
             </div>
 
@@ -203,11 +212,9 @@ const AddressConverter = () => {
                         <p className="text-sm text-blue-700 mt-1">
                             <strong>1단계:</strong> <a href="https://developers.kakao.com" target="_blank" rel="noopener noreferrer" className="underline">카카오 개발자센터</a>에서 앱 생성
                             <br />
-                            <strong>2단계:</strong> "플랫폼" → "Web 플랫폼" 추가 → 도메인 등록 (예: http://localhost:3000)
+                            <strong>2단계:</strong> "플랫폼" → "Web 플랫폼" 추가 → 도메인 등록 (예: https://kyumin7487.github.io)
                             <br />
                             <strong>3단계:</strong> "앱 키" → "REST API 키" 복사하여 위에 입력
-                            <br />
-                            <strong>주의:</strong> API Route를 통해 CORS 이슈를 해결했습니다.
                         </p>
                     </div>
                 </div>
@@ -246,7 +253,7 @@ const AddressConverter = () => {
                             className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         >
                             <option value="">컬럼 선택...</option>
-                            {columns.map((column, index) => (
+                            {columns.map((column: any, index: number) => (
                                 <option key={index} value={column}>
                                     {column || `컬럼 ${index + 1}`}
                                 </option>
@@ -258,7 +265,7 @@ const AddressConverter = () => {
                         <div className="mb-4">
                             <h4 className="text-sm font-medium text-gray-700 mb-2">데이터 미리보기:</h4>
                             <div className="bg-gray-50 p-3 rounded border text-sm">
-                                {data.slice(1, 4).map((row, index) => {
+                                {data.slice(1, 4).map((row: any[], index: number) => {
                                     const columnIndex = columns.indexOf(selectedColumn);
                                     return (
                                         <div key={index} className="mb-1">
@@ -311,7 +318,7 @@ const AddressConverter = () => {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                             <tr>
-                                {processedData[0]?.map((header, index) => (
+                                {processedData[0]?.map((header: any, index: number) => (
                                     <th key={index} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         {header}
                                     </th>
@@ -319,9 +326,9 @@ const AddressConverter = () => {
                             </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                            {processedData.slice(1, 6).map((row, index) => (
+                            {processedData.slice(1, 6).map((row: any[], index: number) => (
                                 <tr key={index}>
-                                    {row.map((cell, cellIndex) => (
+                                    {row.map((cell: any, cellIndex: number) => (
                                         <td key={cellIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {cell}
                                         </td>
