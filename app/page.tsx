@@ -31,6 +31,8 @@ const AddressConverter = () => {
 
             if (result.documents && result.documents.length > 0) {
                 const doc = result.documents[0];
+
+                // 1. 도로명 주소
                 let roadAddressShort = '변환실패';
                 if (doc.road_address) {
                     const roadName = doc.road_address.road_name || '';
@@ -41,11 +43,20 @@ const AddressConverter = () => {
                         if (subNo && subNo !== '' && subNo !== '0') roadAddressShort += `-${subNo}`;
                     }
                 }
+
+                // 2. 지번 주소
                 let jibunAddressShort = '변환실패';
                 if (doc.address) {
-                    const dongName = doc.address.region_3depth_name || '';
+                    let dongName = doc.address.region_3depth_name || '';
+
+                    if (dongName.includes(' ')) {
+                        const parts = dongName.split(' ');
+                        dongName = parts[parts.length - 1];
+                    }
+
                     const mainNo = doc.address.main_address_no || '';
                     const subNo = doc.address.sub_address_no || '';
+
                     if (dongName && mainNo) {
                         jibunAddressShort = `${dongName} ${mainNo}`;
                         if (subNo && subNo !== '' && subNo !== '0') jibunAddressShort += `-${subNo}`;
@@ -279,8 +290,6 @@ const AddressConverter = () => {
                                                 </div>
                                             </div>
                                         )}
-                                        {/* ▲▲▲ 미리보기 기능 복구 끝 ▲▲▲ */}
-
                                     </div>
                                 )}
                             </div>
@@ -394,7 +403,7 @@ const AddressConverter = () => {
                             <div className="mt-8 pt-6 border-t border-gray-100">
                                 <h4 className="text-sm font-bold text-gray-900 mb-2">💡 팁</h4>
                                 <p className="text-xs text-gray-500 leading-relaxed">
-                                    변환에 실패한 주소는 엑셀 파일 내에서 <span className="text-red-600 font-bold bg-red-100 px-1 rounded">빨간색 배경</span>으로 표시되므로 쉽게 구분하여 수정할 수 있습니다.
+                                    변환에 실패한 주소는 엑셀 파일 내에서 <span className="text-red-600 font-bold bg-red-100 px-1 rounded">빨간색 배경</span>으로 표시되므로 쉽게 구분하여 수정할 수 있습니다!
                                 </p>
                             </div>
                         </div>
