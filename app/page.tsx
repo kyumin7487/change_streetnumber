@@ -31,8 +31,6 @@ const AddressConverter = () => {
 
             if (result.documents && result.documents.length > 0) {
                 const doc = result.documents[0];
-
-                // 1. 도로명 주소
                 let roadAddressShort = '변환실패';
                 if (doc.road_address) {
                     const roadName = doc.road_address.road_name || '';
@@ -44,19 +42,15 @@ const AddressConverter = () => {
                     }
                 }
 
-                // 2. 지번 주소
                 let jibunAddressShort = '변환실패';
                 if (doc.address) {
                     let dongName = doc.address.region_3depth_name || '';
-
                     if (dongName.includes(' ')) {
                         const parts = dongName.split(' ');
                         dongName = parts[parts.length - 1];
                     }
-
                     const mainNo = doc.address.main_address_no || '';
                     const subNo = doc.address.sub_address_no || '';
-
                     if (dongName && mainNo) {
                         jibunAddressShort = `${dongName} ${mainNo}`;
                         if (subNo && subNo !== '' && subNo !== '0') jibunAddressShort += `-${subNo}`;
@@ -359,64 +353,68 @@ const AddressConverter = () => {
                                     </table>
                                 </div>
                                 <div className="p-3 bg-gray-50 text-center text-xs text-gray-500 border-t">
-                                    * 미리보기입니다. 전체 데이터는 엑셀을 다운로드하여 확인해주세요.
+                                    * 미리보기입니다. 전체 데이터는 엑셀을 다운로드하여 확인해주세요!
                                 </div>
                             </div>
                         )}
                     </div>
 
                     {/* Right Column: Information (Sidebar) */}
-                    <div className="lg:col-span-1 space-y-6">
-                        {/* Guide Card */}
-                        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 sticky top-6">
-                            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                <HelpCircle className="h-5 w-5 text-indigo-500 mr-2" />
-                                사용 방법
-                            </h4>
-                            <ul className="space-y-4">
-                                <li className="flex">
-                                    <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">1</span>
-                                    <p className="text-sm text-gray-600">
-                                        <a href="https://developers.kakao.com" target="_blank" className="text-indigo-600 hover:underline">카카오 개발자 센터</a>에서 REST API 키를 발급받으세요.
-                                    </p>
-                                </li>
-                                <li className="flex">
-                                    <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">2</span>
-                                    <p className="text-sm text-gray-600">
-                                        엑셀 파일을 업로드하고, 주소가 들어있는 컬럼을 선택합니다.
-                                    </p>
-                                </li>
-                                <li className="flex">
-                                    <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">3</span>
-                                    <p className="text-sm text-gray-600">
-                                        '변환 시작'을 누르면 <b>도로명(건물번호)</b>와 <b>지번(동+번지)</b> 형식으로 자동 변환됩니다.
-                                    </p>
-                                </li>
-                                <li className="flex">
-                                    <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">4</span>
-                                    <p className="text-sm text-gray-600">
-                                        완료 후 다운로드 버튼을 누르면 색상 코드가 포함된 엑셀 파일이 저장됩니다.
-                                    </p>
-                                </li>
-                            </ul>
+                    <div className="lg:col-span-1">
+                        <div className="sticky top-6 space-y-6">
 
-                            <div className="mt-8 pt-6 border-t border-gray-100">
-                                <h4 className="text-sm font-bold text-gray-900 mb-2">💡 팁</h4>
-                                <p className="text-xs text-gray-500 leading-relaxed">
-                                    변환에 실패한 주소는 엑셀 파일 내에서 <span className="text-red-600 font-bold bg-red-100 px-1 rounded">빨간색 배경</span>으로 표시되므로 쉽게 구분하여 수정할 수 있습니다!
+                            {/* Guide Card */}
+                            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+                                <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                                    <HelpCircle className="h-5 w-5 text-indigo-500 mr-2" />
+                                    사용 방법
+                                </h4>
+                                <ul className="space-y-4">
+                                    <li className="flex">
+                                        <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">1</span>
+                                        <p className="text-sm text-gray-600">
+                                            <a href="https://developers.kakao.com" target="_blank" className="text-indigo-600 hover:underline">카카오 개발자 센터</a>에서 REST API 키를 발급받으세요.
+                                        </p>
+                                    </li>
+                                    <li className="flex">
+                                        <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">2</span>
+                                        <p className="text-sm text-gray-600">
+                                            엑셀 파일을 업로드하고, 주소가 들어있는 컬럼을 선택합니다.
+                                        </p>
+                                    </li>
+                                    <li className="flex">
+                                        <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">3</span>
+                                        <p className="text-sm text-gray-600">
+                                            '변환 시작'을 누르면 <b>도로명(건물번호)</b>와 <b>지번(동+번지)</b> 형식으로 자동 변환됩니다.
+                                        </p>
+                                    </li>
+                                    <li className="flex">
+                                        <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">4</span>
+                                        <p className="text-sm text-gray-600">
+                                            완료 후 다운로드 버튼을 누르면 색상 코드가 포함된 엑셀 파일이 저장됩니다.
+                                        </p>
+                                    </li>
+                                </ul>
+
+                                <div className="mt-8 pt-6 border-t border-gray-100">
+                                    <h4 className="text-sm font-bold text-gray-900 mb-2">💡 팁</h4>
+                                    <p className="text-xs text-gray-500 leading-relaxed">
+                                        변환에 실패한 주소는 엑셀 파일 내에서 <span className="text-red-600 font-bold bg-red-100 px-1 rounded">빨간색 배경</span>으로 표시되므로 쉽게 구분하여 수정할 수 있습니다!
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Footer Info */}
+                            <div className="text-center space-y-2 pt-2 pb-6">
+                                <p className="text-xs text-gray-500">
+                                    Powered by Kakao Maps API & Next.js
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                    &copy; 2026 Address Converter. All rights reserved.<br />
+                                    Made by Park Kyumin for Sumin Kim.
                                 </p>
                             </div>
-                        </div>
 
-                        {/* Footer Info */}
-                        <div className="text-center space-y-2 pt-4">
-                            <p className="text-xs text-gray-500">
-                                Powered by Kakao Maps API & Next.js
-                            </p>
-                            <p className="text-xs text-gray-400">
-                                &copy; 2026 Address Converter. All rights reserved.<br />
-                                Made by Park Kyumin for Sumin Kim.
-                            </p>
                         </div>
                     </div>
                 </div>
