@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Upload, Download, AlertCircle, CheckCircle2 } from 'lucide-react';
 
@@ -14,80 +14,78 @@ const AddressConverter = () => {
     const [columns, setColumns] = useState<any[]>([]);
     const [apiKey, setApiKey] = useState('');
 
-    // GitHub Pages는 정적 사이트라 API Route가 없으므로 기본값을 false로 변경 권장
+    // GitHub Pages는 정적 사이트라 API Route가 없으므로 기본값을 false로 변경
     const [useProxy, setUseProxy] = useState(false);
     const [progress, setProgress] = useState(0);
 
-    // [수정 1] address에 ': string' 타입 명시
     const convertAddress = async (address: string) => {
         try {
             if (!apiKey) {
                 throw new Error('카카오 API 키가 설정되지 않았습니다');
             }
 
-            if (useProxy) {
-                const response = await fetch('/api/convert-address', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ address, apiKey })
-                });
+            // 직접 호출 (GitHub Pages용)
+            const response = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
+                headers: { 'Authorization': `KakaoAK ${apiKey}` }
+            });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP 에러: ${response.status}`);
-                }
-
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('API Route를 찾을 수 없습니다. 직접 호출 모드로 전환합니다.');
-                }
-
-                const result = await response.json();
-                if (result.success) {
-                    return {
-                        roadAddress: result.roadAddress,
-                        jibunAddress: result.jibunAddress
-                    };
-                } else {
-                    return {
-                        roadAddress: result.roadAddress || `${address} (변환 실패)`,
-                        jibunAddress: result.jibunAddress || `${address} (변환 실패)`
-                    };
-                }
-            } else {
-                const response = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
-                    headers: { 'Authorization': `KakaoAK ${apiKey}` }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`카카오 API 에러: ${response.status}`);
-                }
-
-                const result = await response.json();
-                if (result.documents && result.documents.length > 0) {
-                    const doc = result.documents[0];
-                    return {
-                        roadAddress: doc.road_address ? doc.road_address.address_name : '도로명주소 없음',
-                        jibunAddress: doc.address ? doc.address.address_name : '지번주소 없음'
-                    };
-                } else {
-                    return {
-                        roadAddress: `${address} (변환 실패)`,
-                        jibunAddress: `${address} (변환 실패)`
-                    };
-                }
+            if (!response.ok) {
+                throw new Error(`카카오 API 에러: ${response.status}`);
             }
+
+            const result = await response.json();
+
+            if (result.documents && result.documents.length > 0) {
+                const doc = result.documents[0];
+
+                // 1. 도로명 주소 조립
+                let roadAddressShort = '변환실패';
+                if (doc.road_address) {
+                    const roadName = doc.road_address.road_name || ''; // 없으면 빈문자열
+                    const mainNo = doc.road_address.main_building_no || '';
+                    const subNo = doc.road_address.sub_building_no || '';
+
+                    if (roadName && mainNo) {
+                        roadAddressShort = `${roadName} ${mainNo}`;
+                        if (subNo && subNo !== '' && subNo !== '0') {
+                            roadAddressShort += `-${subNo}`;
+                        }
+                    }
+                }
+
+                // 2. 지번 주소 조립
+                let jibunAddressShort = '변환실패';
+                if (doc.address) {
+                    const dongName = doc.address.region_3depth_name || '';
+                    const mainNo = doc.address.main_address_no || '';
+                    const subNo = doc.address.sub_address_no || '';
+
+                    if (dongName && mainNo) {
+                        jibunAddressShort = `${dongName} ${mainNo}`;
+                        if (subNo && subNo !== '' && subNo !== '0') {
+                            jibunAddressShort += `-${subNo}`;
+                        }
+                    }
+                }
+
+                return {
+                    roadAddress: roadAddressShort,
+                    jibunAddress: jibunAddressShort
+                };
+
+            } else {
+                return {
+                    roadAddress: `변환실패`,
+                    jibunAddress: `변환실패`
+                };
+            }
+
         } catch (error: any) {
             console.error('주소 변환 오류:', error.message);
-            if (useProxy && error.message.includes('API Route')) {
-                setUseProxy(false);
-                alert('API Route를 찾을 수 없어 직접 호출 모드로 전환합니다. CORS 에러가 발생할 수 있습니다.');
-                return convertAddress(address);
-            }
-            return { roadAddress: `오류: ${error.message}`, jibunAddress: `오류: ${error.message}` };
+            return { roadAddress: `변환실패`, jibunAddress: `변환실패` };
         }
     };
 
-    // [수정 2] event에 ': any' 타입 명시 (간편한 해결을 위해 any 사용)
     const handleFileUpload = (event: any) => {
         const uploadedFile = event.target.files[0];
         if (!uploadedFile) return;
@@ -106,6 +104,8 @@ const AddressConverter = () => {
                     const headerRow = jsonData[0] as any[];
                     setColumns(headerRow);
                     setData(jsonData);
+                    // 파일 새로 올리면 선택된 컬럼 초기화
+                    setSelectedColumn('');
                 }
             } catch (error) {
                 alert('엑셀 파일을 읽는 중 오류가 발생했습니다.');
@@ -130,9 +130,9 @@ const AddressConverter = () => {
         const columnIndex = columns.indexOf(selectedColumn);
         const newData = [];
 
-        // 타입 오류 방지
+        // 헤더 추가
         const firstRow = data[0] as any[];
-        const headerRow = [...firstRow, '도로명주소', '지번주소'];
+        const headerRow = [...firstRow, '도로명(상세)', '지번(상세)'];
         newData.push(headerRow);
 
         for (let i = 1; i < data.length; i++) {
@@ -144,11 +144,12 @@ const AddressConverter = () => {
                 const newRow = [...row, convertedAddresses.roadAddress, convertedAddresses.jibunAddress];
                 newData.push(newRow);
             } else {
-                const newRow = [...row, '주소 없음', '주소 없음'];
+                const newRow = [...row, '주소없음', '주소없음'];
                 newData.push(newRow);
             }
 
             setProgress(Math.round((i / (data.length - 1)) * 100));
+            // API 호출 속도 조절
             await new Promise(resolve => setTimeout(resolve, 100));
         }
 
@@ -170,8 +171,8 @@ const AddressConverter = () => {
     return (
         <div className="max-w-4xl mx-auto p-6 space-y-6">
             <div className="text-center">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">엑셀 주소 변환기</h1>
-                <p className="text-gray-600">엑셀 파일의 주소를 도로명주소와 지번주소로 변환합니다</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">엑셀 주소 변환기 (간편 주소)</h1>
+                <p className="text-gray-600">주소를 변환하여 <b>도로명+번호</b> 및 <b>동+번지</b> 형식으로 출력합니다.</p>
             </div>
 
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
@@ -187,36 +188,6 @@ const AddressConverter = () => {
                         placeholder="카카오 REST API 키를 입력하세요"
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     />
-                </div>
-                <div className="mb-4">
-                    <label className="flex items-center">
-                        <input
-                            type="checkbox"
-                            checked={useProxy}
-                            onChange={(e) => setUseProxy(e.target.checked)}
-                            className="mr-2"
-                        />
-                        <span className="text-sm text-gray-700">API Route 사용 (권장)</span>
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                        * GitHub Pages 배포 시 체크를 해제하세요 (직접 호출 모드 사용)
-                    </p>
-                </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex">
-                    <AlertCircle className="h-5 w-5 text-blue-400 mt-0.5 mr-2" />
-                    <div>
-                        <h4 className="text-sm font-medium text-blue-800">API 키 발급 방법</h4>
-                        <p className="text-sm text-blue-700 mt-1">
-                            <strong>1단계:</strong> <a href="https://developers.kakao.com" target="_blank" rel="noopener noreferrer" className="underline">카카오 개발자센터</a>에서 앱 생성
-                            <br />
-                            <strong>2단계:</strong> "플랫폼" → "Web 플랫폼" 추가 → 도메인 등록 (예: https://kyumin7487.github.io)
-                            <br />
-                            <strong>3단계:</strong> "앱 키" → "REST API 키" 복사하여 위에 입력
-                        </p>
-                    </div>
                 </div>
             </div>
 
@@ -261,15 +232,17 @@ const AddressConverter = () => {
                         </select>
                     </div>
 
+                    {/* 여기가 미리보기 복구된 부분입니다 */}
                     {selectedColumn && (
                         <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">데이터 미리보기:</h4>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">선택한 컬럼 데이터 미리보기 (상위 30개):</h4>
                             <div className="bg-gray-50 p-3 rounded border text-sm">
-                                {data.slice(1, 4).map((row: any[], index: number) => {
+                                {data.slice(1, 31).map((row: any[], index: number) => {
                                     const columnIndex = columns.indexOf(selectedColumn);
                                     return (
-                                        <div key={index} className="mb-1">
-                                            {index + 1}행: {row[columnIndex] || '데이터 없음'}
+                                        <div key={index} className="mb-1 text-gray-600">
+                                            <span className="font-semibold text-gray-400 mr-2">{index + 1}.</span>
+                                            {row[columnIndex] || '(비어있음)'}
                                         </div>
                                     );
                                 })}
@@ -338,12 +311,6 @@ const AddressConverter = () => {
                             </tbody>
                         </table>
                     </div>
-
-                    {processedData.length > 6 && (
-                        <p className="text-sm text-gray-500 mt-2">
-                            ... 총 {processedData.length - 1}행 (처음 5행만 미리보기)
-                        </p>
-                    )}
                 </div>
             )}
         </div>
