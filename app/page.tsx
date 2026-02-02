@@ -399,14 +399,14 @@ const AddressConverter = () => {
                             </div>
                         </div>
 
-                        {/* Footer Info (filling empty space) */}
+                        {/* Footer Info */}
                         <div className="text-center space-y-2 pt-4">
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-gray-500">
                                 Powered by Kakao Maps API & Next.js
                             </p>
-                            <p className="text-xs text-gray-300">
+                            <p className="text-xs text-gray-400">
                                 &copy; 2026 Address Converter. All rights reserved.<br />
-                                made by parkkyumin
+                                Made by Park Kyumin for Sumin Kim.
                             </p>
                         </div>
                     </div>
