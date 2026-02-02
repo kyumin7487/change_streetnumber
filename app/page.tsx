@@ -189,7 +189,7 @@ const AddressConverter = () => {
     return (
         <div className="max-w-4xl mx-auto p-6 space-y-6">
             <div className="text-center">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">엑셀 주소 변환기 (완성판)</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">엑셀 주소 도로명 및 지번 변환기</h1>
                 <p className="text-gray-600">주소를 변환하여 <b>도로명+번호</b> 및 <b>동+번지</b> 형식으로 출력합니다.</p>
             </div>
 
