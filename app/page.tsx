@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useState } from 'react';
-import * as XLSX from 'xlsx'; // 파일 읽기용 (기존 유지)
-import ExcelJS from 'exceljs'; // [NEW] 파일 쓰기 & 색상 넣기용
-import { saveAs } from 'file-saver'; // [NEW] 파일 저장용
-import { Upload, Download, AlertCircle, CheckCircle2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import {
+    Upload, Download, AlertCircle, CheckCircle2,
+    FileSpreadsheet, MapPin, ArrowRight, HelpCircle, ShieldAlert, Eye
+} from 'lucide-react';
 
 const AddressConverter = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -16,21 +19,18 @@ const AddressConverter = () => {
     const [apiKey, setApiKey] = useState('');
     const [progress, setProgress] = useState(0);
 
+    // --- (기존 로직 동일) ---
     const convertAddress = async (address: string) => {
         try {
             if (!apiKey) throw new Error('카카오 API 키가 설정되지 않았습니다');
-
             const response = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
                 headers: { 'Authorization': `KakaoAK ${apiKey}` }
             });
-
             if (!response.ok) throw new Error(`카카오 API 에러: ${response.status}`);
-
             const result = await response.json();
 
             if (result.documents && result.documents.length > 0) {
                 const doc = result.documents[0];
-
                 let roadAddressShort = '변환실패';
                 if (doc.road_address) {
                     const roadName = doc.road_address.road_name || '';
@@ -41,7 +41,6 @@ const AddressConverter = () => {
                         if (subNo && subNo !== '' && subNo !== '0') roadAddressShort += `-${subNo}`;
                     }
                 }
-
                 let jibunAddressShort = '변환실패';
                 if (doc.address) {
                     const dongName = doc.address.region_3depth_name || '';
@@ -52,7 +51,6 @@ const AddressConverter = () => {
                         if (subNo && subNo !== '' && subNo !== '0') jibunAddressShort += `-${subNo}`;
                     }
                 }
-
                 return { roadAddress: roadAddressShort, jibunAddress: jibunAddressShort };
             } else {
                 return { roadAddress: `변환실패`, jibunAddress: `변환실패` };
@@ -96,7 +94,6 @@ const AddressConverter = () => {
             alert('카카오 API 키를 입력해주세요.');
             return;
         }
-
         setIsProcessing(true);
         setProgress(0);
         const columnIndex = columns.indexOf(selectedColumn);
@@ -123,225 +120,298 @@ const AddressConverter = () => {
         setIsProcessing(false);
     };
 
-    // [NEW] ExcelJS를 사용한 다운로드 함수 (색상 적용 가능)
     const downloadExcel = async () => {
         if (!processedData.length || !file) return;
-
-        // 1. 새 워크북 생성
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('변환된주소');
+        processedData.forEach((row) => { worksheet.addRow(row); });
 
-        // 2. 데이터 추가
-        processedData.forEach((row) => {
-            worksheet.addRow(row);
-        });
-
-        // 3. 스타일링 및 너비 조절
         worksheet.columns.forEach((column, index) => {
             let maxLength = 0;
-            const colIndex = index + 1; // ExcelJS는 1부터 시작
+            const colIndex = index + 1;
             const colLetter = worksheet.getColumn(colIndex);
-
-            // 각 열의 데이터 길이 계산하여 너비 자동 조절
             colLetter.eachCell({ includeEmpty: true }, (cell) => {
                 const cellValue = cell.value ? String(cell.value) : "";
                 const length = cellValue.length + (cellValue.replace(/[a-zA-Z0-9]/g, '').length * 0.5);
                 if (length > maxLength) maxLength = length;
-
-                // [핵심] '변환실패' 또는 '주소없음'이면 배경색 빨간색으로 변경
                 if (cellValue === '변환실패' || cellValue === '주소없음') {
-                    cell.fill = {
-                        type: 'pattern',
-                        pattern: 'solid',
-                        fgColor: { argb: 'FFFFC7CE' } // 연한 빨강 배경
-                    };
-                    cell.font = {
-                        color: { argb: 'FF9C0006' }, // 진한 빨강 글씨
-                        bold: true
-                    };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFC7CE' } };
+                    cell.font = { color: { argb: 'FF9C0006' }, bold: true };
                 }
             });
-
-            // 너비 설정 (최소 12, 최대 60)
             colLetter.width = Math.min(Math.max(maxLength + 2, 12), 60);
         });
 
-        // 4. 헤더 스타일 (첫 번째 줄)
         const headerRow = worksheet.getRow(1);
         headerRow.eachCell((cell) => {
             cell.font = { bold: true };
-            cell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'FFEEEEEE' } // 회색 배경
-            };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEEEEE' } };
             cell.alignment = { horizontal: 'center' };
         });
 
-        // 5. 파일 내보내기
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const fileName = file.name.replace(/\.(xlsx|xlsm)$/, '_변환됨.xlsx');
-
         saveAs(blob, fileName);
     };
+    // --- (로직 끝) ---
 
     return (
-        <div className="max-w-4xl mx-auto p-6 space-y-6">
-            <div className="text-center">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">엑셀 주소 도로명 및 지번 변환기</h1>
-                <p className="text-gray-600">주소를 변환하여 <b>도로명+번호</b> 및 <b>동+번지</b> 형식으로 출력합니다.</p>
-            </div>
-
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4">카카오 API 키 설정</h3>
-                <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        카카오 REST API 키:
-                    </label>
-                    <input
-                        type="password"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="카카오 REST API 키를 입력하세요"
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                </div>
-            </div>
-
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8">
-                <div className="text-center">
-                    <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <label className="cursor-pointer">
-                        <span className="text-lg font-medium text-gray-900">엑셀 파일을 선택하세요</span>
-                        <input
-                            type="file"
-                            accept=".xlsx,.xlsm"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                        />
-                    </label>
-                    <p className="text-sm text-gray-500 mt-2">XLSX, XLSM 파일을 지원합니다</p>
-                </div>
-            </div>
-
-            {file && data.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold mb-4">파일 정보</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                        파일명: {file.name} | 총 {data.length - 1}행의 데이터
-                    </p>
-
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            주소가 있는 컬럼을 선택하세요:
-                        </label>
-                        <select
-                            value={selectedColumn}
-                            onChange={(e) => setSelectedColumn(e.target.value)}
-                            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                            <option value="">컬럼 선택...</option>
-                            {columns.map((column: any, index: number) => (
-                                <option key={index} value={column}>
-                                    {column || `컬럼 ${index + 1}`}
-                                </option>
-                            ))}
-                        </select>
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-blue-700 to-indigo-600 pb-24 pt-12 px-4 sm:px-6 lg:px-8 shadow-lg">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex items-center space-x-3 mb-2">
+                        <MapPin className="h-8 w-8 text-blue-200" />
+                        <h1 className="text-3xl font-extrabold text-white tracking-tight">
+                            엑셀 주소 도로명 & 지번 변환기
+                        </h1>
                     </div>
+                    <p className="mt-2 text-lg text-blue-100 max-w-2xl">
+                        복잡한 주소록을 한 번에 정리하세요. <br/>
+                        도로명주소와 지번주소를 자동으로 분리하여 깔끔한 엑셀 파일로 만들어드립니다.
+                    </p>
+                </div>
+            </div>
 
-                    {selectedColumn && (
-                        <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">데이터 미리보기 (상위 15행 미리보기):</h4>
-                            <div className="bg-gray-50 p-3 rounded border text-sm">
-                                {data.slice(1, 16).map((row: any[], index: number) => {
-                                    const columnIndex = columns.indexOf(selectedColumn);
-                                    return (
-                                        <div key={index} className="mb-1 text-gray-600">
-                                            <span className="font-semibold text-gray-400 mr-2">{index + 1}.</span>
-                                            {row[columnIndex] || '(비어있음)'}
-                                        </div>
-                                    );
-                                })}
+            {/* Main Content */}
+            <main className="-mt-20 flex-grow px-4 sm:px-6 lg:px-8 pb-12">
+                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                    {/* Left Column: The Tool (2/3 width) */}
+                    <div className="lg:col-span-2 space-y-6">
+
+                        {/* 1. API Key Card */}
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                            <div className="p-6">
+                                <h3 className="text-lg font-bold text-gray-900 flex items-center mb-4">
+                                    <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                                        <ShieldAlert className="h-5 w-5 text-blue-600" />
+                                    </div>
+                                    1. API 설정
+                                </h3>
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        카카오 REST API 키
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={apiKey}
+                                        onChange={(e) => setApiKey(e.target.value)}
+                                        placeholder="API 키를 입력해주세요"
+                                        className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                    />
+                                    <p className="text-xs text-gray-500">
+                                        * 키는 브라우저에만 저장되며 서버로 전송되지 않습니다. 안심하고 사용하세요.
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    )}
-                </div>
-            )}
 
-            {selectedColumn && apiKey && (
-                <div className="text-center">
-                    <button
-                        onClick={processAddresses}
-                        disabled={isProcessing}
-                        className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isProcessing ? (
-                            <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                변환 중... {progress}%
-                            </>
-                        ) : (
-                            '주소 변환 시작'
-                        )}
-                    </button>
-                </div>
-            )}
+                        {/* 2. Upload Card */}
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                            <div className="p-6">
+                                <h3 className="text-lg font-bold text-gray-900 flex items-center mb-6">
+                                    <div className="bg-green-100 p-2 rounded-lg mr-3">
+                                        <FileSpreadsheet className="h-5 w-5 text-green-600" />
+                                    </div>
+                                    2. 파일 업로드
+                                </h3>
 
-            {processedData.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center">
-                            <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
-                            <h3 className="text-lg font-semibold">변환 완료</h3>
-                        </div>
-                        <button
-                            onClick={downloadExcel}
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                        >
-                            <Download className="h-4 w-4 mr-2" />
-                            파일 다운로드
-                        </button>
-                    </div>
+                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer group relative">
+                                    <input
+                                        type="file"
+                                        accept=".xlsx,.xlsm"
+                                        onChange={handleFileUpload}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    />
+                                    <div className="space-y-2">
+                                        <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                                            <Upload className="h-8 w-8 text-blue-600" />
+                                        </div>
+                                        <div className="text-gray-600 font-medium">
+                                            클릭하여 엑셀 파일 업로드
+                                        </div>
+                                        <p className="text-xs text-gray-400">XLSX, XLSM 포맷 지원</p>
+                                    </div>
+                                </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 border">
-                            <thead className="bg-gray-100">
-                            <tr>
-                                {processedData[0]?.map((header: any, index: number) => (
-                                    <th key={index} className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-r">
-                                        {header}
-                                    </th>
-                                ))}
-                            </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                            {processedData.slice(1, 11).map((row: any[], index: number) => (
-                                <tr key={index}>
-                                    {row.map((cell: any, cellIndex: number) => (
-                                        <td
-                                            key={cellIndex}
-                                            className={`px-6 py-4 whitespace-nowrap text-sm border-r ${
-                                                cell === '변환실패' || cell === '주소없음'
-                                                    ? 'bg-red-100 text-red-600 font-bold'
-                                                    : 'text-gray-900'
-                                            }`}
+                                {file && (
+                                    <div className="mt-6 bg-gray-50 rounded-lg p-4 border border-gray-200 animate-fade-in">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <span className="text-sm font-medium text-gray-700 truncate flex-1">
+                                                📄 {file.name}
+                                            </span>
+                                            <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded border">
+                                                {data.length - 1}개 데이터
+                                            </span>
+                                        </div>
+
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            변환할 주소 컬럼 선택
+                                        </label>
+                                        <select
+                                            value={selectedColumn}
+                                            onChange={(e) => setSelectedColumn(e.target.value)}
+                                            className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                         >
-                                            {cell}
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
+                                            <option value="">컬럼을 선택해주세요</option>
+                                            {columns.map((col: any, idx) => (
+                                                <option key={idx} value={col}>{col || `Column ${idx+1}`}</option>
+                                            ))}
+                                        </select>
+
+                                        {selectedColumn && (
+                                            <div className="mt-4 pt-4 border-t border-gray-200">
+                                                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center">
+                                                    <Eye className="h-3 w-3 mr-1" /> 선택 데이터 미리보기 (상위 5개)
+                                                </h4>
+                                                <div className="bg-white p-3 rounded border border-gray-200 space-y-1">
+                                                    {data.slice(1, 6).map((row: any[], index: number) => {
+                                                        const columnIndex = columns.indexOf(selectedColumn);
+                                                        return (
+                                                            <div key={index} className="text-sm text-gray-600 truncate flex items-center">
+                                                                <span className="inline-block w-6 text-center text-xs font-bold text-blue-500 bg-blue-50 rounded mr-2">{index + 1}</span>
+                                                                {row[columnIndex] || <span className="text-gray-400 italic">(비어있음)</span>}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {/* ▲▲▲ 미리보기 기능 복구 끝 ▲▲▲ */}
+
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Action Area */}
+                        {selectedColumn && apiKey && (
+                            <div className="flex justify-center pt-4">
+                                <button
+                                    onClick={processAddresses}
+                                    disabled={isProcessing}
+                                    className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                                >
+                                    {isProcessing ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                            <span>변환 진행중 ({progress}%)</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>주소 변환 시작하기</span>
+                                            <ArrowRight className="h-5 w-5" />
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Result Area */}
+                        {processedData.length > 0 && (
+                            <div className="bg-white rounded-xl shadow-lg border border-green-100 overflow-hidden animate-fade-in-up">
+                                <div className="bg-green-50 p-4 border-b border-green-100 flex justify-between items-center">
+                                    <div className="flex items-center space-x-2 text-green-800 font-bold">
+                                        <CheckCircle2 className="h-6 w-6" />
+                                        <span>변환 완료!</span>
+                                    </div>
+                                    <button
+                                        onClick={downloadExcel}
+                                        className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-sm text-sm font-medium"
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        <span>엑셀 다운로드</span>
+                                    </button>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                        <tr>
+                                            {processedData[0]?.map((h:any, i:number) => (
+                                                <th key={i} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    {h}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                        {processedData.slice(1, 11).map((row:any[], i) => (
+                                            <tr key={i}>
+                                                {row.map((cell:any, j) => (
+                                                    <td key={j} className={`px-6 py-4 whitespace-nowrap text-sm ${cell === '변환실패' || cell === '주소없음' ? 'text-red-600 font-bold bg-red-50' : 'text-gray-700'}`}>
+                                                        {cell}
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="p-3 bg-gray-50 text-center text-xs text-gray-500 border-t">
+                                    * 미리보기입니다. 전체 데이터는 엑셀을 다운로드하여 확인해주세요.
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    {processedData.length > 6 && (
-                        <p className="text-sm text-gray-500 mt-2">
-                            ... 총 {processedData.length - 1}행 (상위 10행 미리보기)
-                        </p>
-                    )}
+
+                    {/* Right Column: Information (Sidebar) */}
+                    <div className="lg:col-span-1 space-y-6">
+                        {/* Guide Card */}
+                        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 sticky top-6">
+                            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                                <HelpCircle className="h-5 w-5 text-indigo-500 mr-2" />
+                                사용 방법
+                            </h4>
+                            <ul className="space-y-4">
+                                <li className="flex">
+                                    <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">1</span>
+                                    <p className="text-sm text-gray-600">
+                                        <a href="https://developers.kakao.com" target="_blank" className="text-indigo-600 hover:underline">카카오 개발자 센터</a>에서 REST API 키를 발급받으세요.
+                                    </p>
+                                </li>
+                                <li className="flex">
+                                    <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">2</span>
+                                    <p className="text-sm text-gray-600">
+                                        엑셀 파일을 업로드하고, 주소가 들어있는 컬럼을 선택합니다.
+                                    </p>
+                                </li>
+                                <li className="flex">
+                                    <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">3</span>
+                                    <p className="text-sm text-gray-600">
+                                        '변환 시작'을 누르면 <b>도로명(건물번호)</b>와 <b>지번(동+번지)</b> 형식으로 자동 변환됩니다.
+                                    </p>
+                                </li>
+                                <li className="flex">
+                                    <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs mr-3">4</span>
+                                    <p className="text-sm text-gray-600">
+                                        완료 후 다운로드 버튼을 누르면 색상 코드가 포함된 엑셀 파일이 저장됩니다.
+                                    </p>
+                                </li>
+                            </ul>
+
+                            <div className="mt-8 pt-6 border-t border-gray-100">
+                                <h4 className="text-sm font-bold text-gray-900 mb-2">💡 팁</h4>
+                                <p className="text-xs text-gray-500 leading-relaxed">
+                                    변환에 실패한 주소는 엑셀 파일 내에서 <span className="text-red-600 font-bold bg-red-100 px-1 rounded">빨간색 배경</span>으로 표시되므로 쉽게 구분하여 수정할 수 있습니다.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Footer Info (filling empty space) */}
+                        <div className="text-center space-y-2 pt-4">
+                            <p className="text-xs text-gray-400">
+                                Powered by Kakao Maps API & Next.js
+                            </p>
+                            <p className="text-xs text-gray-300">
+                                &copy; 2026 Address Converter. All rights reserved.<br />
+                                made by parkkyumin
+                            </p>
+                        </div>
+                    </div>
                 </div>
-            )}
+            </main>
         </div>
     );
 };
