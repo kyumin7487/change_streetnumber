@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx'; // 파일 읽기용 (기존 유지)
+import ExcelJS from 'exceljs'; // [NEW] 파일 쓰기 & 색상 넣기용
+import { saveAs } from 'file-saver'; // [NEW] 파일 저장용
 import { Upload, Download, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const AddressConverter = () => {
@@ -12,7 +14,6 @@ const AddressConverter = () => {
     const [selectedColumn, setSelectedColumn] = useState('');
     const [columns, setColumns] = useState<any[]>([]);
     const [apiKey, setApiKey] = useState('');
-    const [useProxy, setUseProxy] = useState(false);
     const [progress, setProgress] = useState(0);
 
     const convertAddress = async (address: string) => {
@@ -122,38 +123,73 @@ const AddressConverter = () => {
         setIsProcessing(false);
     };
 
-    const downloadExcel = () => {
+    // [NEW] ExcelJS를 사용한 다운로드 함수 (색상 적용 가능)
+    const downloadExcel = async () => {
         if (!processedData.length || !file) return;
 
-        const worksheet = XLSX.utils.aoa_to_sheet(processedData);
+        // 1. 새 워크북 생성
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('변환된주소');
 
-        // [기능 추가] 엑셀 컬럼 너비 자동 조절 로직
-        // 각 열(Column)의 데이터를 순회하며 가장 긴 글자수를 찾습니다.
-        const colWidths = processedData[0].map((_: any, colIndex: number) => {
-            let maxLength = 0;
-            processedData.forEach((row) => {
-                const cellValue = row[colIndex] ? String(row[colIndex]) : "";
-                // 한글은 영어보다 넓으므로 길이를 1.5배로 계산
-                const length = cellValue.length + (cellValue.replace(/[a-zA-Z0-9]/g, '').length * 0.5);
-                if (length > maxLength) maxLength = length;
-            });
-            // 최소 너비 10, 최대 너비 50, 여유값 +2
-            return { wch: Math.min(Math.max(maxLength + 2, 10), 50) };
+        // 2. 데이터 추가
+        processedData.forEach((row) => {
+            worksheet.addRow(row);
         });
 
-        // 워크시트에 너비 설정 적용
-        worksheet['!cols'] = colWidths;
+        // 3. 스타일링 및 너비 조절
+        worksheet.columns.forEach((column, index) => {
+            let maxLength = 0;
+            const colIndex = index + 1; // ExcelJS는 1부터 시작
+            const colLetter = worksheet.getColumn(colIndex);
 
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, '변환된주소');
+            // 각 열의 데이터 길이 계산하여 너비 자동 조절
+            colLetter.eachCell({ includeEmpty: true }, (cell) => {
+                const cellValue = cell.value ? String(cell.value) : "";
+                const length = cellValue.length + (cellValue.replace(/[a-zA-Z0-9]/g, '').length * 0.5);
+                if (length > maxLength) maxLength = length;
+
+                // [핵심] '변환실패' 또는 '주소없음'이면 배경색 빨간색으로 변경
+                if (cellValue === '변환실패' || cellValue === '주소없음') {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FFFFC7CE' } // 연한 빨강 배경
+                    };
+                    cell.font = {
+                        color: { argb: 'FF9C0006' }, // 진한 빨강 글씨
+                        bold: true
+                    };
+                }
+            });
+
+            // 너비 설정 (최소 12, 최대 60)
+            colLetter.width = Math.min(Math.max(maxLength + 2, 12), 60);
+        });
+
+        // 4. 헤더 스타일 (첫 번째 줄)
+        const headerRow = worksheet.getRow(1);
+        headerRow.eachCell((cell) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFEEEEEE' } // 회색 배경
+            };
+            cell.alignment = { horizontal: 'center' };
+        });
+
+        // 5. 파일 내보내기
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const fileName = file.name.replace(/\.(xlsx|xlsm)$/, '_변환됨.xlsx');
-        XLSX.writeFile(workbook, fileName);
+
+        saveAs(blob, fileName);
     };
 
     return (
         <div className="max-w-4xl mx-auto p-6 space-y-6">
             <div className="text-center">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">엑셀 주소 변환기 (간편 주소)</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">엑셀 주소 변환기 (완성판)</h1>
                 <p className="text-gray-600">주소를 변환하여 <b>도로명+번호</b> 및 <b>동+번지</b> 형식으로 출력합니다.</p>
             </div>
 
@@ -216,9 +252,9 @@ const AddressConverter = () => {
 
                     {selectedColumn && (
                         <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">데이터 미리보기 (상위 15개):</h4>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">데이터 미리보기 (상위 3개):</h4>
                             <div className="bg-gray-50 p-3 rounded border text-sm">
-                                {data.slice(1, 16).map((row: any[], index: number) => {
+                                {data.slice(1, 4).map((row: any[], index: number) => {
                                     const columnIndex = columns.indexOf(selectedColumn);
                                     return (
                                         <div key={index} className="mb-1 text-gray-600">
@@ -264,7 +300,7 @@ const AddressConverter = () => {
                             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                         >
                             <Download className="h-4 w-4 mr-2" />
-                            다운로드
+                            다운로드 (색상포함)
                         </button>
                     </div>
 
@@ -285,7 +321,6 @@ const AddressConverter = () => {
                                     {row.map((cell: any, cellIndex: number) => (
                                         <td
                                             key={cellIndex}
-                                            // [기능 추가] '변환실패'일 경우 배경색을 빨간색(bg-red-100)과 글자색(text-red-600)으로 설정
                                             className={`px-6 py-4 whitespace-nowrap text-sm border-r ${
                                                 cell === '변환실패' || cell === '주소없음'
                                                     ? 'bg-red-100 text-red-600 font-bold'
