@@ -252,9 +252,9 @@ const AddressConverter = () => {
 
                     {selectedColumn && (
                         <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">데이터 미리보기 (상위 3개):</h4>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">데이터 미리보기 (상위 15행 미리보기):</h4>
                             <div className="bg-gray-50 p-3 rounded border text-sm">
-                                {data.slice(1, 4).map((row: any[], index: number) => {
+                                {data.slice(1, 16).map((row: any[], index: number) => {
                                     const columnIndex = columns.indexOf(selectedColumn);
                                     return (
                                         <div key={index} className="mb-1 text-gray-600">
@@ -300,7 +300,7 @@ const AddressConverter = () => {
                             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                         >
                             <Download className="h-4 w-4 mr-2" />
-                            다운로드 (색상포함)
+                            파일 다운로드
                         </button>
                     </div>
 
@@ -316,7 +316,7 @@ const AddressConverter = () => {
                             </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                            {processedData.slice(1, 6).map((row: any[], index: number) => (
+                            {processedData.slice(1, 11).map((row: any[], index: number) => (
                                 <tr key={index}>
                                     {row.map((cell: any, cellIndex: number) => (
                                         <td
@@ -337,7 +337,7 @@ const AddressConverter = () => {
                     </div>
                     {processedData.length > 6 && (
                         <p className="text-sm text-gray-500 mt-2">
-                            ... 총 {processedData.length - 1}행 (상위 5행만 미리보기)
+                            ... 총 {processedData.length - 1}행 (상위 10행 미리보기)
                         </p>
                     )}
                 </div>

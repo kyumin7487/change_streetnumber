@@ -447,7 +447,7 @@ const AddressConverter = ()=>{
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
                                 className: "text-sm font-medium text-gray-700 mb-2",
-                                children: "데이터 미리보기 (상위 3개):"
+                                children: "데이터 미리보기 (상위 15행 미리보기):"
                             }, void 0, false, {
                                 fileName: "[project]/app/page.tsx",
                                 lineNumber: 255,
@@ -455,7 +455,7 @@ const AddressConverter = ()=>{
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "bg-gray-50 p-3 rounded border text-sm",
-                                children: data.slice(1, 4).map((row, index)=>{
+                                children: data.slice(1, 16).map((row, index)=>{
                                     const columnIndex = columns.indexOf(selectedColumn);
                                     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "mb-1 text-gray-600",
@@ -567,7 +567,7 @@ const AddressConverter = ()=>{
                                         lineNumber: 302,
                                         columnNumber: 29
                                     }, ("TURBOPACK compile-time value", void 0)),
-                                    "다운로드 (색상포함)"
+                                    "파일 다운로드"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/page.tsx",
@@ -608,7 +608,7 @@ const AddressConverter = ()=>{
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
                                     className: "bg-white divide-y divide-gray-200",
-                                    children: processedData.slice(1, 6).map((row, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
+                                    children: processedData.slice(1, 11).map((row, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
                                             children: row.map((cell, cellIndex)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
                                                     className: "px-6 py-4 whitespace-nowrap text-sm border-r ".concat(cell === '변환실패' || cell === '주소없음' ? 'bg-red-100 text-red-600 font-bold' : 'text-gray-900'),
                                                     children: cell
@@ -643,7 +643,7 @@ const AddressConverter = ()=>{
                         children: [
                             "... 총 ",
                             processedData.length - 1,
-                            "행 (상위 5행만 미리보기)"
+                            "행 (상위 10행 미리보기)"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/page.tsx",
