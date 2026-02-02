@@ -5,7 +5,6 @@ import * as XLSX from 'xlsx';
 import { Upload, Download, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const AddressConverter = () => {
-    // 타입 오류 방지를 위해 제네릭(<any>)이나 초기값 설정
     const [file, setFile] = useState<File | null>(null);
     const [data, setData] = useState<any[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -13,73 +12,50 @@ const AddressConverter = () => {
     const [selectedColumn, setSelectedColumn] = useState('');
     const [columns, setColumns] = useState<any[]>([]);
     const [apiKey, setApiKey] = useState('');
-
-    // GitHub Pages는 정적 사이트라 API Route가 없으므로 기본값을 false로 변경
     const [useProxy, setUseProxy] = useState(false);
     const [progress, setProgress] = useState(0);
 
     const convertAddress = async (address: string) => {
         try {
-            if (!apiKey) {
-                throw new Error('카카오 API 키가 설정되지 않았습니다');
-            }
+            if (!apiKey) throw new Error('카카오 API 키가 설정되지 않았습니다');
 
-            // 직접 호출 (GitHub Pages용)
             const response = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
                 headers: { 'Authorization': `KakaoAK ${apiKey}` }
             });
 
-            if (!response.ok) {
-                throw new Error(`카카오 API 에러: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`카카오 API 에러: ${response.status}`);
 
             const result = await response.json();
 
             if (result.documents && result.documents.length > 0) {
                 const doc = result.documents[0];
 
-                // 1. 도로명 주소 조립
                 let roadAddressShort = '변환실패';
                 if (doc.road_address) {
-                    const roadName = doc.road_address.road_name || ''; // 없으면 빈문자열
+                    const roadName = doc.road_address.road_name || '';
                     const mainNo = doc.road_address.main_building_no || '';
                     const subNo = doc.road_address.sub_building_no || '';
-
                     if (roadName && mainNo) {
                         roadAddressShort = `${roadName} ${mainNo}`;
-                        if (subNo && subNo !== '' && subNo !== '0') {
-                            roadAddressShort += `-${subNo}`;
-                        }
+                        if (subNo && subNo !== '' && subNo !== '0') roadAddressShort += `-${subNo}`;
                     }
                 }
 
-                // 2. 지번 주소 조립
                 let jibunAddressShort = '변환실패';
                 if (doc.address) {
                     const dongName = doc.address.region_3depth_name || '';
                     const mainNo = doc.address.main_address_no || '';
                     const subNo = doc.address.sub_address_no || '';
-
                     if (dongName && mainNo) {
                         jibunAddressShort = `${dongName} ${mainNo}`;
-                        if (subNo && subNo !== '' && subNo !== '0') {
-                            jibunAddressShort += `-${subNo}`;
-                        }
+                        if (subNo && subNo !== '' && subNo !== '0') jibunAddressShort += `-${subNo}`;
                     }
                 }
 
-                return {
-                    roadAddress: roadAddressShort,
-                    jibunAddress: jibunAddressShort
-                };
-
+                return { roadAddress: roadAddressShort, jibunAddress: jibunAddressShort };
             } else {
-                return {
-                    roadAddress: `변환실패`,
-                    jibunAddress: `변환실패`
-                };
+                return { roadAddress: `변환실패`, jibunAddress: `변환실패` };
             }
-
         } catch (error: any) {
             console.error('주소 변환 오류:', error.message);
             return { roadAddress: `변환실패`, jibunAddress: `변환실패` };
@@ -89,29 +65,24 @@ const AddressConverter = () => {
     const handleFileUpload = (event: any) => {
         const uploadedFile = event.target.files[0];
         if (!uploadedFile) return;
-
         setFile(uploadedFile);
         const reader = new FileReader();
-
         reader.onload = (e: any) => {
             try {
                 const workbook = XLSX.read(e.target.result, { type: 'binary' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
                 if (jsonData.length > 0) {
                     const headerRow = jsonData[0] as any[];
                     setColumns(headerRow);
                     setData(jsonData);
-                    // 파일 새로 올리면 선택된 컬럼 초기화
                     setSelectedColumn('');
                 }
             } catch (error) {
                 alert('엑셀 파일을 읽는 중 오류가 발생했습니다.');
             }
         };
-
         reader.readAsBinaryString(uploadedFile);
     };
 
@@ -129,8 +100,6 @@ const AddressConverter = () => {
         setProgress(0);
         const columnIndex = columns.indexOf(selectedColumn);
         const newData = [];
-
-        // 헤더 추가
         const firstRow = data[0] as any[];
         const headerRow = [...firstRow, '도로명(상세)', '지번(상세)'];
         newData.push(headerRow);
@@ -138,7 +107,6 @@ const AddressConverter = () => {
         for (let i = 1; i < data.length; i++) {
             const row = data[i] as any[];
             const address = row[columnIndex];
-
             if (address && typeof address === 'string') {
                 const convertedAddresses = await convertAddress(address);
                 const newRow = [...row, convertedAddresses.roadAddress, convertedAddresses.jibunAddress];
@@ -147,12 +115,9 @@ const AddressConverter = () => {
                 const newRow = [...row, '주소없음', '주소없음'];
                 newData.push(newRow);
             }
-
             setProgress(Math.round((i / (data.length - 1)) * 100));
-            // API 호출 속도 조절
             await new Promise(resolve => setTimeout(resolve, 100));
         }
-
         setProcessedData(newData);
         setIsProcessing(false);
     };
@@ -161,9 +126,26 @@ const AddressConverter = () => {
         if (!processedData.length || !file) return;
 
         const worksheet = XLSX.utils.aoa_to_sheet(processedData);
+
+        // [기능 추가] 엑셀 컬럼 너비 자동 조절 로직
+        // 각 열(Column)의 데이터를 순회하며 가장 긴 글자수를 찾습니다.
+        const colWidths = processedData[0].map((_: any, colIndex: number) => {
+            let maxLength = 0;
+            processedData.forEach((row) => {
+                const cellValue = row[colIndex] ? String(row[colIndex]) : "";
+                // 한글은 영어보다 넓으므로 길이를 1.5배로 계산
+                const length = cellValue.length + (cellValue.replace(/[a-zA-Z0-9]/g, '').length * 0.5);
+                if (length > maxLength) maxLength = length;
+            });
+            // 최소 너비 10, 최대 너비 50, 여유값 +2
+            return { wch: Math.min(Math.max(maxLength + 2, 10), 50) };
+        });
+
+        // 워크시트에 너비 설정 적용
+        worksheet['!cols'] = colWidths;
+
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, '변환된주소');
-
         const fileName = file.name.replace(/\.(xlsx|xlsm)$/, '_변환됨.xlsx');
         XLSX.writeFile(workbook, fileName);
     };
@@ -232,12 +214,11 @@ const AddressConverter = () => {
                         </select>
                     </div>
 
-                    {/* 여기가 미리보기 복구된 부분입니다 */}
                     {selectedColumn && (
                         <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">선택한 컬럼 데이터 미리보기 (상위 30개):</h4>
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">데이터 미리보기 (상위 15개):</h4>
                             <div className="bg-gray-50 p-3 rounded border text-sm">
-                                {data.slice(1, 31).map((row: any[], index: number) => {
+                                {data.slice(1, 16).map((row: any[], index: number) => {
                                     const columnIndex = columns.indexOf(selectedColumn);
                                     return (
                                         <div key={index} className="mb-1 text-gray-600">
@@ -288,11 +269,11 @@ const AddressConverter = () => {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-gray-200 border">
+                            <thead className="bg-gray-100">
                             <tr>
                                 {processedData[0]?.map((header: any, index: number) => (
-                                    <th key={index} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th key={index} className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-r">
                                         {header}
                                     </th>
                                 ))}
@@ -302,7 +283,15 @@ const AddressConverter = () => {
                             {processedData.slice(1, 6).map((row: any[], index: number) => (
                                 <tr key={index}>
                                     {row.map((cell: any, cellIndex: number) => (
-                                        <td key={cellIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <td
+                                            key={cellIndex}
+                                            // [기능 추가] '변환실패'일 경우 배경색을 빨간색(bg-red-100)과 글자색(text-red-600)으로 설정
+                                            className={`px-6 py-4 whitespace-nowrap text-sm border-r ${
+                                                cell === '변환실패' || cell === '주소없음'
+                                                    ? 'bg-red-100 text-red-600 font-bold'
+                                                    : 'text-gray-900'
+                                            }`}
+                                        >
                                             {cell}
                                         </td>
                                     ))}
@@ -311,6 +300,11 @@ const AddressConverter = () => {
                             </tbody>
                         </table>
                     </div>
+                    {processedData.length > 6 && (
+                        <p className="text-sm text-gray-500 mt-2">
+                            ... 총 {processedData.length - 1}행 (상위 5행만 미리보기)
+                        </p>
+                    )}
                 </div>
             )}
         </div>

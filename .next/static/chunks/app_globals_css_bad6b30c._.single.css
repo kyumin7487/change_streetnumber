@@ -49,6 +49,8 @@
 
 @layer theme {
   :root, :host {
+    --color-red-100: #ffe2e2;
+    --color-red-600: #e40014;
     --color-green-500: #00c758;
     --color-green-600: #00a544;
     --color-green-700: #008138;
@@ -60,6 +62,7 @@
     --color-blue-700: #1447e6;
     --color-blue-800: #193cb8;
     --color-gray-50: #f9fafb;
+    --color-gray-100: #f3f4f6;
     --color-gray-200: #e5e7eb;
     --color-gray-300: #d1d5dc;
     --color-gray-400: #99a1af;
@@ -93,6 +96,8 @@
 
   @supports (color: color(display-p3 0 0 0)) {
     :root, :host {
+      --color-red-100: color(display-p3 .980386 .889727 .887779);
+      --color-red-600: color(display-p3 .830323 .140383 .133196);
       --color-green-500: color(display-p3 .308734 .774754 .374307);
       --color-green-600: color(display-p3 .243882 .640824 .294808);
       --color-green-700: color(display-p3 .198355 .501799 .245335);
@@ -104,6 +109,7 @@
       --color-blue-700: color(display-p3 .1379 .274983 .867624);
       --color-blue-800: color(display-p3 .134023 .230646 .695537);
       --color-gray-50: color(display-p3 .977213 .98084 .985102);
+      --color-gray-100: color(display-p3 .953567 .956796 .964321);
       --color-gray-200: color(display-p3 .899787 .906171 .92106);
       --color-gray-300: color(display-p3 .822033 .835264 .858521);
       --color-gray-400: color(display-p3 .605734 .630385 .680158);
@@ -116,6 +122,8 @@
 
   @supports (color: lab(0% 0 0)) {
     :root, :host {
+      --color-red-100: lab(92.243% 10.2865 3.83865);
+      --color-red-600: lab(48.4493% 77.4328 61.5452);
       --color-green-500: lab(70.5521% -66.5147 45.8073);
       --color-green-600: lab(59.0978% -58.6621 41.2579);
       --color-green-700: lab(47.0329% -47.0239 31.4788);
@@ -127,6 +135,7 @@
       --color-blue-700: lab(36.9089% 35.0961 -85.6872);
       --color-blue-800: lab(30.2514% 27.7853 -70.2699);
       --color-gray-50: lab(98.2596% -.247031 -.706708);
+      --color-gray-100: lab(96.1596% -.0823438 -1.13575);
       --color-gray-200: lab(91.6229% -.159115 -2.26791);
       --color-gray-300: lab(85.1236% -.612259 -3.7138);
       --color-gray-400: lab(65.9269% -.832707 -8.17473);
@@ -639,6 +648,11 @@
     border-width: 2px;
   }
 
+  .border-r {
+    border-right-style: var(--tw-border-style);
+    border-right-width: 1px;
+  }
+
   .border-b-2 {
     border-bottom-style: var(--tw-border-style);
     border-bottom-width: 2px;
@@ -681,8 +695,16 @@
     background-color: var(--color-gray-50);
   }
 
+  .bg-gray-100 {
+    background-color: var(--color-gray-100);
+  }
+
   .bg-green-600 {
     background-color: var(--color-green-600);
+  }
+
+  .bg-red-100 {
+    background-color: var(--color-red-100);
   }
 
   .bg-white {
@@ -820,6 +842,10 @@
 
   .text-green-500 {
     color: var(--color-green-500);
+  }
+
+  .text-red-600 {
+    color: var(--color-red-600);
   }
 
   .text-white {

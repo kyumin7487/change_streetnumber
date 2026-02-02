@@ -21,7 +21,6 @@ var _s = __turbopack_context__.k.signature();
 const AddressConverter = ()=>{
     var _processedData_;
     _s();
-    // 타입 오류 방지를 위해 제네릭(<any>)이나 초기값 설정
     const [file, setFile] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [data, setData] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
     const [isProcessing, setIsProcessing] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
@@ -29,40 +28,30 @@ const AddressConverter = ()=>{
     const [selectedColumn, setSelectedColumn] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('');
     const [columns, setColumns] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
     const [apiKey, setApiKey] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])('');
-    // GitHub Pages는 정적 사이트라 API Route가 없으므로 기본값을 false로 변경
     const [useProxy, setUseProxy] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [progress, setProgress] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(0);
     const convertAddress = async (address)=>{
         try {
-            if (!apiKey) {
-                throw new Error('카카오 API 키가 설정되지 않았습니다');
-            }
-            // 직접 호출 (GitHub Pages용)
+            if (!apiKey) throw new Error('카카오 API 키가 설정되지 않았습니다');
             const response = await fetch("https://dapi.kakao.com/v2/local/search/address.json?query=".concat(encodeURIComponent(address)), {
                 headers: {
                     'Authorization': "KakaoAK ".concat(apiKey)
                 }
             });
-            if (!response.ok) {
-                throw new Error("카카오 API 에러: ".concat(response.status));
-            }
+            if (!response.ok) throw new Error("카카오 API 에러: ".concat(response.status));
             const result = await response.json();
             if (result.documents && result.documents.length > 0) {
                 const doc = result.documents[0];
-                // 1. 도로명 주소 조립
                 let roadAddressShort = '변환실패';
                 if (doc.road_address) {
-                    const roadName = doc.road_address.road_name || ''; // 없으면 빈문자열
+                    const roadName = doc.road_address.road_name || '';
                     const mainNo = doc.road_address.main_building_no || '';
                     const subNo = doc.road_address.sub_building_no || '';
                     if (roadName && mainNo) {
                         roadAddressShort = "".concat(roadName, " ").concat(mainNo);
-                        if (subNo && subNo !== '' && subNo !== '0') {
-                            roadAddressShort += "-".concat(subNo);
-                        }
+                        if (subNo && subNo !== '' && subNo !== '0') roadAddressShort += "-".concat(subNo);
                     }
                 }
-                // 2. 지번 주소 조립
                 let jibunAddressShort = '변환실패';
                 if (doc.address) {
                     const dongName = doc.address.region_3depth_name || '';
@@ -70,9 +59,7 @@ const AddressConverter = ()=>{
                     const subNo = doc.address.sub_address_no || '';
                     if (dongName && mainNo) {
                         jibunAddressShort = "".concat(dongName, " ").concat(mainNo);
-                        if (subNo && subNo !== '' && subNo !== '0') {
-                            jibunAddressShort += "-".concat(subNo);
-                        }
+                        if (subNo && subNo !== '' && subNo !== '0') jibunAddressShort += "-".concat(subNo);
                     }
                 }
                 return {
@@ -112,7 +99,6 @@ const AddressConverter = ()=>{
                     const headerRow = jsonData[0];
                     setColumns(headerRow);
                     setData(jsonData);
-                    // 파일 새로 올리면 선택된 컬럼 초기화
                     setSelectedColumn('');
                 }
             } catch (error) {
@@ -134,7 +120,6 @@ const AddressConverter = ()=>{
         setProgress(0);
         const columnIndex = columns.indexOf(selectedColumn);
         const newData = [];
-        // 헤더 추가
         const firstRow = data[0];
         const headerRow = [
             ...firstRow,
@@ -162,7 +147,6 @@ const AddressConverter = ()=>{
                 newData.push(newRow);
             }
             setProgress(Math.round(i / (data.length - 1) * 100));
-            // API 호출 속도 조절
             await new Promise((resolve)=>setTimeout(resolve, 100));
         }
         setProcessedData(newData);
@@ -171,6 +155,23 @@ const AddressConverter = ()=>{
     const downloadExcel = ()=>{
         if (!processedData.length || !file) return;
         const worksheet = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$xlsx$2f$xlsx$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["utils"].aoa_to_sheet(processedData);
+        // [기능 추가] 엑셀 컬럼 너비 자동 조절 로직
+        // 각 열(Column)의 데이터를 순회하며 가장 긴 글자수를 찾습니다.
+        const colWidths = processedData[0].map((_, colIndex)=>{
+            let maxLength = 0;
+            processedData.forEach((row)=>{
+                const cellValue = row[colIndex] ? String(row[colIndex]) : "";
+                // 한글은 영어보다 넓으므로 길이를 1.5배로 계산
+                const length = cellValue.length + cellValue.replace(/[a-zA-Z0-9]/g, '').length * 0.5;
+                if (length > maxLength) maxLength = length;
+            });
+            // 최소 너비 10, 최대 너비 50, 여유값 +2
+            return {
+                wch: Math.min(Math.max(maxLength + 2, 10), 50)
+            };
+        });
+        // 워크시트에 너비 설정 적용
+        worksheet['!cols'] = colWidths;
         const workbook = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$xlsx$2f$xlsx$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["utils"].book_new();
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$xlsx$2f$xlsx$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["utils"].book_append_sheet(workbook, worksheet, '변환된주소');
         const fileName = file.name.replace(/\.(xlsx|xlsm)$/, '_변환됨.xlsx');
@@ -187,7 +188,7 @@ const AddressConverter = ()=>{
                         children: "엑셀 주소 변환기 (간편 주소)"
                     }, void 0, false, {
                         fileName: "[project]/app/page.tsx",
-                        lineNumber: 174,
+                        lineNumber: 156,
                         columnNumber: 17
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -198,7 +199,7 @@ const AddressConverter = ()=>{
                                 children: "도로명+번호"
                             }, void 0, false, {
                                 fileName: "[project]/app/page.tsx",
-                                lineNumber: 175,
+                                lineNumber: 157,
                                 columnNumber: 55
                             }, ("TURBOPACK compile-time value", void 0)),
                             " 및 ",
@@ -206,20 +207,20 @@ const AddressConverter = ()=>{
                                 children: "동+번지"
                             }, void 0, false, {
                                 fileName: "[project]/app/page.tsx",
-                                lineNumber: 175,
+                                lineNumber: 157,
                                 columnNumber: 71
                             }, ("TURBOPACK compile-time value", void 0)),
                             " 형식으로 출력합니다."
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/page.tsx",
-                        lineNumber: 175,
+                        lineNumber: 157,
                         columnNumber: 17
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/page.tsx",
-                lineNumber: 173,
+                lineNumber: 155,
                 columnNumber: 13
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -230,7 +231,7 @@ const AddressConverter = ()=>{
                         children: "카카오 API 키 설정"
                     }, void 0, false, {
                         fileName: "[project]/app/page.tsx",
-                        lineNumber: 179,
+                        lineNumber: 161,
                         columnNumber: 17
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -241,7 +242,7 @@ const AddressConverter = ()=>{
                                 children: "카카오 REST API 키:"
                             }, void 0, false, {
                                 fileName: "[project]/app/page.tsx",
-                                lineNumber: 181,
+                                lineNumber: 163,
                                 columnNumber: 21
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -252,19 +253,19 @@ const AddressConverter = ()=>{
                                 className: "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                             }, void 0, false, {
                                 fileName: "[project]/app/page.tsx",
-                                lineNumber: 184,
+                                lineNumber: 166,
                                 columnNumber: 21
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/page.tsx",
-                        lineNumber: 180,
+                        lineNumber: 162,
                         columnNumber: 17
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/page.tsx",
-                lineNumber: 178,
+                lineNumber: 160,
                 columnNumber: 13
             }, ("TURBOPACK compile-time value", void 0)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -276,7 +277,7 @@ const AddressConverter = ()=>{
                             className: "mx-auto h-12 w-12 text-gray-400 mb-4"
                         }, void 0, false, {
                             fileName: "[project]/app/page.tsx",
-                            lineNumber: 196,
+                            lineNumber: 178,
                             columnNumber: 21
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
@@ -287,7 +288,7 @@ const AddressConverter = ()=>{
                                     children: "엑셀 파일을 선택하세요"
                                 }, void 0, false, {
                                     fileName: "[project]/app/page.tsx",
-                                    lineNumber: 198,
+                                    lineNumber: 180,
                                     columnNumber: 25
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -297,13 +298,13 @@ const AddressConverter = ()=>{
                                     className: "hidden"
                                 }, void 0, false, {
                                     fileName: "[project]/app/page.tsx",
-                                    lineNumber: 199,
+                                    lineNumber: 181,
                                     columnNumber: 25
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/page.tsx",
-                            lineNumber: 197,
+                            lineNumber: 179,
                             columnNumber: 21
                         }, ("TURBOPACK compile-time value", void 0)),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -311,18 +312,18 @@ const AddressConverter = ()=>{
                             children: "XLSX, XLSM 파일을 지원합니다"
                         }, void 0, false, {
                             fileName: "[project]/app/page.tsx",
-                            lineNumber: 206,
+                            lineNumber: 188,
                             columnNumber: 21
                         }, ("TURBOPACK compile-time value", void 0))
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/page.tsx",
-                    lineNumber: 195,
+                    lineNumber: 177,
                     columnNumber: 17
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/app/page.tsx",
-                lineNumber: 194,
+                lineNumber: 176,
                 columnNumber: 13
             }, ("TURBOPACK compile-time value", void 0)),
             file && data.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -333,7 +334,7 @@ const AddressConverter = ()=>{
                         children: "파일 정보"
                     }, void 0, false, {
                         fileName: "[project]/app/page.tsx",
-                        lineNumber: 212,
+                        lineNumber: 194,
                         columnNumber: 21
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -347,7 +348,7 @@ const AddressConverter = ()=>{
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/page.tsx",
-                        lineNumber: 213,
+                        lineNumber: 195,
                         columnNumber: 21
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -358,7 +359,7 @@ const AddressConverter = ()=>{
                                 children: "주소가 있는 컬럼을 선택하세요:"
                             }, void 0, false, {
                                 fileName: "[project]/app/page.tsx",
-                                lineNumber: 218,
+                                lineNumber: 200,
                                 columnNumber: 25
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("select", {
@@ -371,7 +372,7 @@ const AddressConverter = ()=>{
                                         children: "컬럼 선택..."
                                     }, void 0, false, {
                                         fileName: "[project]/app/page.tsx",
-                                        lineNumber: 226,
+                                        lineNumber: 208,
                                         columnNumber: 29
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     columns.map((column, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -379,19 +380,19 @@ const AddressConverter = ()=>{
                                             children: column || "컬럼 ".concat(index + 1)
                                         }, index, false, {
                                             fileName: "[project]/app/page.tsx",
-                                            lineNumber: 228,
+                                            lineNumber: 210,
                                             columnNumber: 33
                                         }, ("TURBOPACK compile-time value", void 0)))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/page.tsx",
-                                lineNumber: 221,
+                                lineNumber: 203,
                                 columnNumber: 25
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/page.tsx",
-                        lineNumber: 217,
+                        lineNumber: 199,
                         columnNumber: 21
                     }, ("TURBOPACK compile-time value", void 0)),
                     selectedColumn && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -399,15 +400,15 @@ const AddressConverter = ()=>{
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h4", {
                                 className: "text-sm font-medium text-gray-700 mb-2",
-                                children: "선택한 컬럼 데이터 미리보기 (상위 30개):"
+                                children: "데이터 미리보기 (상위 15개):"
                             }, void 0, false, {
                                 fileName: "[project]/app/page.tsx",
-                                lineNumber: 238,
+                                lineNumber: 219,
                                 columnNumber: 29
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "bg-gray-50 p-3 rounded border text-sm",
-                                children: data.slice(1, 31).map((row, index)=>{
+                                children: data.slice(1, 16).map((row, index)=>{
                                     const columnIndex = columns.indexOf(selectedColumn);
                                     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "mb-1 text-gray-600",
@@ -420,32 +421,32 @@ const AddressConverter = ()=>{
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/page.tsx",
-                                                lineNumber: 244,
+                                                lineNumber: 225,
                                                 columnNumber: 45
                                             }, ("TURBOPACK compile-time value", void 0)),
                                             row[columnIndex] || '(비어있음)'
                                         ]
                                     }, index, true, {
                                         fileName: "[project]/app/page.tsx",
-                                        lineNumber: 243,
+                                        lineNumber: 224,
                                         columnNumber: 41
                                     }, ("TURBOPACK compile-time value", void 0));
                                 })
                             }, void 0, false, {
                                 fileName: "[project]/app/page.tsx",
-                                lineNumber: 239,
+                                lineNumber: 220,
                                 columnNumber: 29
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/page.tsx",
-                        lineNumber: 237,
+                        lineNumber: 218,
                         columnNumber: 25
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/page.tsx",
-                lineNumber: 211,
+                lineNumber: 193,
                 columnNumber: 17
             }, ("TURBOPACK compile-time value", void 0)),
             selectedColumn && apiKey && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -460,7 +461,7 @@ const AddressConverter = ()=>{
                                 className: "animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
                             }, void 0, false, {
                                 fileName: "[project]/app/page.tsx",
-                                lineNumber: 264,
+                                lineNumber: 245,
                                 columnNumber: 33
                             }, ("TURBOPACK compile-time value", void 0)),
                             "변환 중... ",
@@ -470,12 +471,12 @@ const AddressConverter = ()=>{
                     }, void 0, true) : '주소 변환 시작'
                 }, void 0, false, {
                     fileName: "[project]/app/page.tsx",
-                    lineNumber: 257,
+                    lineNumber: 238,
                     columnNumber: 21
                 }, ("TURBOPACK compile-time value", void 0))
             }, void 0, false, {
                 fileName: "[project]/app/page.tsx",
-                lineNumber: 256,
+                lineNumber: 237,
                 columnNumber: 17
             }, ("TURBOPACK compile-time value", void 0)),
             processedData.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -491,7 +492,7 @@ const AddressConverter = ()=>{
                                         className: "h-5 w-5 text-green-500 mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/app/page.tsx",
-                                        lineNumber: 278,
+                                        lineNumber: 259,
                                         columnNumber: 29
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -499,13 +500,13 @@ const AddressConverter = ()=>{
                                         children: "변환 완료"
                                     }, void 0, false, {
                                         fileName: "[project]/app/page.tsx",
-                                        lineNumber: 279,
+                                        lineNumber: 260,
                                         columnNumber: 29
                                     }, ("TURBOPACK compile-time value", void 0))
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/page.tsx",
-                                lineNumber: 277,
+                                lineNumber: 258,
                                 columnNumber: 25
                             }, ("TURBOPACK compile-time value", void 0)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -516,90 +517,103 @@ const AddressConverter = ()=>{
                                         className: "h-4 w-4 mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/app/page.tsx",
-                                        lineNumber: 285,
+                                        lineNumber: 266,
                                         columnNumber: 29
                                     }, ("TURBOPACK compile-time value", void 0)),
                                     "다운로드"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/page.tsx",
-                                lineNumber: 281,
+                                lineNumber: 262,
                                 columnNumber: 25
                             }, ("TURBOPACK compile-time value", void 0))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/page.tsx",
-                        lineNumber: 276,
+                        lineNumber: 257,
                         columnNumber: 21
                     }, ("TURBOPACK compile-time value", void 0)),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "overflow-x-auto",
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("table", {
-                            className: "min-w-full divide-y divide-gray-200",
+                            className: "min-w-full divide-y divide-gray-200 border",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("thead", {
-                                    className: "bg-gray-50",
+                                    className: "bg-gray-100",
                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
                                         children: (_processedData_ = processedData[0]) === null || _processedData_ === void 0 ? void 0 : _processedData_.map((header, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
-                                                className: "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider",
+                                                className: "px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-r",
                                                 children: header
                                             }, index, false, {
                                                 fileName: "[project]/app/page.tsx",
-                                                lineNumber: 295,
+                                                lineNumber: 276,
                                                 columnNumber: 37
                                             }, ("TURBOPACK compile-time value", void 0)))
                                     }, void 0, false, {
                                         fileName: "[project]/app/page.tsx",
-                                        lineNumber: 293,
+                                        lineNumber: 274,
                                         columnNumber: 29
                                     }, ("TURBOPACK compile-time value", void 0))
                                 }, void 0, false, {
                                     fileName: "[project]/app/page.tsx",
-                                    lineNumber: 292,
+                                    lineNumber: 273,
                                     columnNumber: 29
                                 }, ("TURBOPACK compile-time value", void 0)),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
                                     className: "bg-white divide-y divide-gray-200",
                                     children: processedData.slice(1, 6).map((row, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
                                             children: row.map((cell, cellIndex)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
-                                                    className: "px-6 py-4 whitespace-nowrap text-sm text-gray-900",
+                                                    // [기능 추가] '변환실패'일 경우 배경색을 빨간색(bg-red-100)과 글자색(text-red-600)으로 설정
+                                                    className: "px-6 py-4 whitespace-nowrap text-sm border-r ".concat(cell === '변환실패' || cell === '주소없음' ? 'bg-red-100 text-red-600 font-bold' : 'text-gray-900'),
                                                     children: cell
                                                 }, cellIndex, false, {
                                                     fileName: "[project]/app/page.tsx",
-                                                    lineNumber: 305,
+                                                    lineNumber: 286,
                                                     columnNumber: 41
                                                 }, ("TURBOPACK compile-time value", void 0)))
                                         }, index, false, {
                                             fileName: "[project]/app/page.tsx",
-                                            lineNumber: 303,
+                                            lineNumber: 284,
                                             columnNumber: 33
                                         }, ("TURBOPACK compile-time value", void 0)))
                                 }, void 0, false, {
                                     fileName: "[project]/app/page.tsx",
-                                    lineNumber: 301,
+                                    lineNumber: 282,
                                     columnNumber: 29
                                 }, ("TURBOPACK compile-time value", void 0))
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/page.tsx",
-                            lineNumber: 291,
+                            lineNumber: 272,
                             columnNumber: 25
                         }, ("TURBOPACK compile-time value", void 0))
                     }, void 0, false, {
                         fileName: "[project]/app/page.tsx",
-                        lineNumber: 290,
+                        lineNumber: 271,
                         columnNumber: 21
+                    }, ("TURBOPACK compile-time value", void 0)),
+                    processedData.length > 6 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                        className: "text-sm text-gray-500 mt-2",
+                        children: [
+                            "... 총 ",
+                            processedData.length - 1,
+                            "행 (상위 5행만 미리보기)"
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/app/page.tsx",
+                        lineNumber: 304,
+                        columnNumber: 25
                     }, ("TURBOPACK compile-time value", void 0))
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/page.tsx",
-                lineNumber: 275,
+                lineNumber: 256,
                 columnNumber: 17
             }, ("TURBOPACK compile-time value", void 0))
         ]
     }, void 0, true, {
         fileName: "[project]/app/page.tsx",
-        lineNumber: 172,
+        lineNumber: 154,
         columnNumber: 9
     }, ("TURBOPACK compile-time value", void 0));
 };
