@@ -411,7 +411,7 @@ const AddressConverter = () => {
                                 </p>
                                 <p className="text-xs text-gray-400">
                                     &copy; 2026 Address Converter. All rights reserved.<br />
-                                    Made by Park Kyumin for Sumin Kim.
+                                    Made by Park Kyumin for Sumin Kim & Doorkitchen.
                                 </p>
                             </div>
 

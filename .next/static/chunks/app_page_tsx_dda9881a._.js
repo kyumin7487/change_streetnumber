@@ -1022,7 +1022,7 @@ const AddressConverter = ()=>{
                                                         lineNumber: 413,
                                                         columnNumber: 88
                                                     }, ("TURBOPACK compile-time value", void 0)),
-                                                    "Made by Park Kyumin for Sumin Kim."
+                                                    "Made by Park Kyumin for Sumin Kim & Doorkitchen."
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/app/page.tsx",
