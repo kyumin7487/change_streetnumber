@@ -112,7 +112,7 @@ const AddressConverter = () => {
             const address = row[columnIndex];
             if (address && typeof address === 'string') {
                 const convertedAddresses = await convertAddress(address);
-                const newRow = [...row, convertedAddresses.roadAddress, convertedAddresses.jibunAddress];
+                const newRow = [...row, convertedAddresses.jibunAddress, convertedAddresses.roadAddress];
                 newData.push(newRow);
             } else {
                 const newRow = [...row, '주소없음', '주소없음'];
